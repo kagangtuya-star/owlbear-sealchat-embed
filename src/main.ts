@@ -20,6 +20,17 @@ function toNumber(input: HTMLInputElement | null, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function syncLauncherHeight(): void {
+  window.requestAnimationFrame(() => {
+    const launcher = document.querySelector<HTMLElement>(".launcher-control");
+    if (!launcher) {
+      return;
+    }
+
+    void OBR.action.setHeight(Math.ceil(launcher.scrollHeight));
+  });
+}
+
 function renderLauncher(): void {
   const app = document.querySelector<HTMLDivElement>("#app");
   if (!app) {
@@ -33,7 +44,6 @@ function renderLauncher(): void {
     <main class="launcher launcher-control">
       <header class="launcher-header">
         <strong>SealChat</strong>
-        <span>${settings.collapsed ? "已收缩" : "已展开"}</span>
       </header>
       <form id="control-form" class="control-form">
         <label>
@@ -69,9 +79,6 @@ function renderLauncher(): void {
             settings.scale
           }" /></label>
         </section>
-        <p id="control-status" class="control-status">${
-          validation.ok ? "地址有效，可打开右侧面板。" : escapeAttribute(validation.reason)
-        }</p>
         <div class="control-actions">
           <button id="open-panel" type="button">展开</button>
           <button id="collapse-panel" type="button">收缩</button>
@@ -82,6 +89,7 @@ function renderLauncher(): void {
       </form>
     </main>
   `;
+  syncLauncherHeight();
 
   const readSettings = () => {
     const current = loadLocalSettings();
