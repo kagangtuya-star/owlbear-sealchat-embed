@@ -3,7 +3,7 @@ title: SealChat
 description: Embed SealChat into Owlbear Rodeo as a floating chat panel
 author: SilverDragon
 image: https://owlbear-sealchat-embed.kagangtuya.top/logo.png
-icon: https://owlbear-sealchat-embed.kagangtuya.top/icon.icon
+icon: https://owlbear-sealchat-embed.kagangtuya.top/icon.ico
 tags:
   - chat
   - sealchat

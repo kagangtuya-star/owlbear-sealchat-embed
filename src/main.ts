@@ -210,6 +210,6 @@ channel?.addEventListener("message", (event) => {
 
 OBR.onReady(async () => {
   await OBR.action.setTitle("SealChat");
-  await OBR.action.setIcon("/icon.svg");
+  await OBR.action.setIcon("/icon.ico");
   renderLauncher();
 });

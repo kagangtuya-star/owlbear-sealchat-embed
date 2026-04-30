@@ -3,7 +3,7 @@ title: SealChat
 description: 将 SealChat 作为浮动聊天面板嵌入 Owlbear Rodeo
 author: SilverDragon
 image:
-icon: /icon.svg
+icon: /icon.ico
 tags:
   - chat
   - sealchat
