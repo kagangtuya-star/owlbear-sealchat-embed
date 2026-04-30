@@ -1,6 +1,9 @@
 {
-  "name": "SealChat",
-  "version": "0.1.0",
+  "name": "SealChat-Embed",
+  "version": "1.0.0",
+  "author": "星尘",
+  "homepage_url": "https://github.com/kagangtuya-star/owlbear-sealchat-embed",
+  "description": "Embed SealChat into Owlbear Rodeo as a floating chat panel. 将 SealChat 作为浮动聊天面板嵌入 Owlbear Rodeo。",
   "manifest_version": 1,
   "action": {
     "title": "SealChat",
