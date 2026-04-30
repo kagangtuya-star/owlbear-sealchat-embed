@@ -8,6 +8,8 @@ export type SealChatSettings = {
   height: number;
   top: number;
   rightOffset: number;
+  collapsedTop: number;
+  collapsedRightOffset: number;
   collapsedWidth: number;
   collapsedHeight: number;
   scale: number;
@@ -17,14 +19,18 @@ export type SealChatSettings = {
   collapsed: boolean;
 };
 
+export const DEFAULT_COLLAPSED_HEIGHT = 56;
+
 export const DEFAULT_SETTINGS: SealChatSettings = {
   sealChatUrl: "",
   width: 420,
   height: 620,
   top: 48,
   rightOffset: 72,
+  collapsedTop: -1,
+  collapsedRightOffset: 72,
   collapsedWidth: 44,
-  collapsedHeight: 96,
+  collapsedHeight: DEFAULT_COLLAPSED_HEIGHT,
   scale: 100,
   resizeMode: false,
   minimalChrome: true,

@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, SealChatSettings } from "./config";
+import { DEFAULT_COLLAPSED_HEIGHT, DEFAULT_SETTINGS, SealChatSettings } from "./config";
 
 const LOCAL_KEY = "sealchat.owlbear.settings.v1";
 const ROOM_URL_KEY = "sealchat.owlbear/defaultUrl";
@@ -23,14 +23,20 @@ export function mergeSettings(value: unknown): SealChatSettings {
     top: typeof value.top === "number" ? value.top : DEFAULT_SETTINGS.top,
     rightOffset:
       typeof value.rightOffset === "number" ? value.rightOffset : DEFAULT_SETTINGS.rightOffset,
+    collapsedTop:
+      typeof value.collapsedTop === "number" ? value.collapsedTop : DEFAULT_SETTINGS.collapsedTop,
+    collapsedRightOffset:
+      typeof value.collapsedRightOffset === "number"
+        ? value.collapsedRightOffset
+        : DEFAULT_SETTINGS.collapsedRightOffset,
     collapsedWidth:
       typeof value.collapsedWidth === "number"
         ? value.collapsedWidth
         : DEFAULT_SETTINGS.collapsedWidth,
     collapsedHeight:
-      typeof value.collapsedHeight === "number"
+      typeof value.collapsedHeight === "number" && value.collapsedHeight !== 96
         ? value.collapsedHeight
-        : DEFAULT_SETTINGS.collapsedHeight,
+        : DEFAULT_COLLAPSED_HEIGHT,
     scale: typeof value.scale === "number" ? value.scale : DEFAULT_SETTINGS.scale,
     resizeMode:
       typeof value.resizeMode === "boolean" ? value.resizeMode : DEFAULT_SETTINGS.resizeMode,

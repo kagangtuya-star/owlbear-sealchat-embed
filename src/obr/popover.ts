@@ -1,4 +1,5 @@
 import { RESIZE_GUTTER, RESIZE_PREVIEW_RESERVE } from "../panel/resize";
+import { DEFAULT_COLLAPSED_HEIGHT } from "../settings/config";
 
 export const PANEL_ID = "sealchat/sidebar";
 
@@ -9,6 +10,8 @@ export type GeometryInput = {
   height: number;
   top: number;
   rightOffset: number;
+  collapsedTop?: number;
+  collapsedRightOffset?: number;
   collapsed: boolean;
   resizeMode?: boolean;
   collapsedWidth?: number;
@@ -23,7 +26,10 @@ export type PanelGeometry = {
 };
 
 export function calculatePanelGeometry(input: GeometryInput): PanelGeometry {
-  const rightOffset = Math.max(0, input.rightOffset);
+  const rightOffset = Math.max(
+    0,
+    input.collapsed ? input.collapsedRightOffset ?? input.rightOffset : input.rightOffset
+  );
   const reserve = input.resizeMode && !input.collapsed ? RESIZE_PREVIEW_RESERVE : 0;
   const edgeGutter = input.collapsed ? 0 : RESIZE_GUTTER;
   const topReserve = Math.min(input.top, edgeGutter + reserve);
@@ -35,13 +41,16 @@ export function calculatePanelGeometry(input: GeometryInput): PanelGeometry {
     ? input.collapsedWidth ?? 44
     : input.width + leftReserve + rightReserve;
   const requestedHeight = input.collapsed
-    ? input.collapsedHeight ?? 96
+    ? input.collapsedHeight ?? DEFAULT_COLLAPSED_HEIGHT
     : input.height + topReserve + bottomReserve;
   const minWidth = input.collapsed ? 36 : 280;
   const minHeight = input.collapsed ? 44 : 360;
-  const preferredTop = input.collapsed
-    ? input.viewportHeight - requestedHeight - 24
-    : input.top - topReserve;
+  const preferredTop =
+    input.collapsed && input.collapsedTop !== undefined && input.collapsedTop >= 0
+      ? input.collapsedTop
+      : input.collapsed
+        ? input.viewportHeight - requestedHeight - 24
+        : input.top - topReserve;
   const width = Math.min(
     Math.max(minWidth, requestedWidth),
     Math.max(minWidth, input.viewportWidth - anchorRightOffset)
@@ -65,6 +74,8 @@ export type PanelOpenSettings = {
   height: number;
   top: number;
   rightOffset: number;
+  collapsedTop?: number;
+  collapsedRightOffset?: number;
   collapsed: boolean;
   resizeMode?: boolean;
   collapsedWidth: number;
@@ -83,6 +94,8 @@ export async function openPanel(settings: PanelOpenSettings): Promise<void> {
     height: settings.height,
     top: settings.top,
     rightOffset: settings.rightOffset,
+    collapsedTop: settings.collapsedTop,
+    collapsedRightOffset: settings.collapsedRightOffset,
     collapsed: settings.collapsed,
     resizeMode: settings.resizeMode,
     collapsedWidth: settings.collapsedWidth,

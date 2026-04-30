@@ -62,7 +62,7 @@ function renderLauncher(): void {
           <label>收缩宽度 <input id="collapsed-width" type="number" min="36" step="2" value="${
             settings.collapsedWidth
           }" /></label>
-          <label>收缩高度 <input id="collapsed-height" type="number" min="96" step="8" value="${
+          <label>收缩高度 <input id="collapsed-height" type="number" min="44" step="4" value="${
             settings.collapsedHeight
           }" /></label>
           <label>缩放倍率 <input id="panel-scale" type="number" min="60" max="160" step="5" value="${

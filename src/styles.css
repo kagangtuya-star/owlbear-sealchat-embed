@@ -161,7 +161,7 @@ input {
 
 .panel-card.is-collapsed {
   width: var(--collapsed-width, 44px);
-  height: var(--collapsed-height, 96px);
+  height: var(--collapsed-height, 56px);
   min-height: 44px;
   background: transparent;
 }
@@ -236,6 +236,10 @@ input {
 .panel-card.is-collapsed .floating-tab {
   display: grid;
   place-items: center;
+}
+
+.panel-card.is-collapsed .floating-tab i {
+  display: none;
 }
 
 .resize-edge {

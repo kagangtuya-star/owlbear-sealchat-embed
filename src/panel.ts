@@ -7,6 +7,13 @@ import {
   RESIZE_PREVIEW_RESERVE,
   ResizeEdge,
 } from "./panel/resize";
+import {
+  calculateCollapsedDragSettings,
+  calculateScreenPointerDelta,
+  COLLAPSED_DRAG_DELAY,
+  resolveCollapsedStartPosition,
+} from "./panel/collapsedDrag";
+import type { CollapsedPosition, ScreenPointerPosition } from "./panel/collapsedDrag";
 import { buildEmbedUrl, buildLoginUrl, getUrlOrigin, validateSealChatUrl } from "./settings/config";
 import { loadLocalSettings, saveLocalSettings } from "./settings/storage";
 import "./styles.css";
@@ -47,7 +54,7 @@ function ensureShell(): void {
   panel.innerHTML = `
     <section id="panel-shell" class="panel-shell">
       <div id="panel-card" class="panel-card">
-        <button id="collapsed-tab" class="floating-tab" type="button" title="点击展开；调整模式下可拖动">
+        <button id="collapsed-tab" class="floating-tab" type="button" title="单击展开；长按拖动">
           <span>聊天</span>
           <i id="tab-resize" aria-hidden="true"></i>
         </button>
@@ -167,56 +174,107 @@ function previewResize(start: Settings, preview: Settings, edge: ResizeEdge): vo
 
 function bindCollapsedTab(): void {
   const tab = document.querySelector<HTMLButtonElement>("#collapsed-tab");
-  const resizeHandle = document.querySelector<HTMLElement>("#tab-resize");
   if (!tab) {
     return;
   }
 
   let moved = false;
-  let resizing = false;
-  let startX = 0;
-  let startY = 0;
-  let startTop = 0;
-  let startRight = 0;
-  let startHeight = 0;
+  let dragging = false;
+  let pressTimer: number | undefined;
+  let startPointer: ScreenPointerPosition = { screenX: 0, screenY: 0 };
+  let startPosition: CollapsedPosition = { top: 0, rightOffset: 0 };
+  let startSettings = loadLocalSettings();
+  let lastSettings = loadLocalSettings();
+  let pendingOpenSettings: Settings | null = null;
+  let openInFlight = false;
+  let pointerSession = 0;
+
+  const flushOpenPanel = () => {
+    if (openInFlight || !pendingOpenSettings) {
+      return;
+    }
+
+    const next = pendingOpenSettings;
+    pendingOpenSettings = null;
+    openInFlight = true;
+    void openPanel(next).finally(() => {
+      openInFlight = false;
+      flushOpenPanel();
+    });
+  };
+
+  const queueOpenPanel = (settings: Settings) => {
+    pendingOpenSettings = settings;
+    flushOpenPanel();
+  };
 
   const move = (event: PointerEvent) => {
-    moved = true;
-    const dx = event.clientX - startX;
-    const dy = event.clientY - startY;
-    const current = loadLocalSettings();
-    const next = resizing
-      ? { ...current, collapsedHeight: Math.max(44, startHeight + dy) }
-      : {
-          ...current,
-          top: Math.max(0, startTop + dy),
-          rightOffset: Math.max(48, startRight - dx),
-        };
+    if (!dragging) {
+      return;
+    }
+
+    const { dx, dy } = calculateScreenPointerDelta(startPointer, event);
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+      moved = true;
+    }
+
+    const next = calculateCollapsedDragSettings(startSettings, startPosition, { dx, dy });
+    lastSettings = next;
     publishPanelSettings(next);
+    queueOpenPanel(next);
   };
 
   const finish = (event: PointerEvent) => {
-    tab.releasePointerCapture(event.pointerId);
+    pointerSession += 1;
+    window.clearTimeout(pressTimer);
+    if (tab.hasPointerCapture(event.pointerId)) {
+      tab.releasePointerCapture(event.pointerId);
+    }
     document.removeEventListener("pointermove", move);
     document.removeEventListener("pointerup", finish);
-    void openPanel(loadLocalSettings());
+    document.removeEventListener("pointercancel", finish);
+    if (dragging) {
+      queueOpenPanel(lastSettings);
+    }
+    window.setTimeout(() => {
+      moved = false;
+      dragging = false;
+    }, 0);
   };
 
   tab.addEventListener("pointerdown", (event) => {
-    if (!loadLocalSettings().resizeMode) {
+    const settings = loadLocalSettings();
+    if (!settings.collapsed) {
       return;
     }
-    const settings = loadLocalSettings();
-    startX = event.clientX;
-    startY = event.clientY;
-    startTop = settings.top;
-    startRight = settings.rightOffset;
-    startHeight = settings.collapsedHeight;
+
+    event.stopPropagation();
+    const session = pointerSession + 1;
+    pointerSession = session;
+    startPointer = event;
+    startSettings = settings;
+    lastSettings = settings;
     moved = false;
-    resizing = event.target === resizeHandle;
+    dragging = false;
     tab.setPointerCapture(event.pointerId);
     document.addEventListener("pointermove", move);
     document.addEventListener("pointerup", finish);
+    document.addEventListener("pointercancel", finish);
+
+    void OBR.viewport
+      .getHeight()
+      .catch(() => window.innerHeight)
+      .then((viewportHeight) => {
+        if (session !== pointerSession) {
+          return;
+        }
+
+        startPosition = resolveCollapsedStartPosition(settings, viewportHeight);
+        pressTimer = window.setTimeout(() => {
+          dragging = true;
+          moved = true;
+        }, COLLAPSED_DRAG_DELAY);
+      });
   });
 
   tab.addEventListener("click", () => {
@@ -225,7 +283,7 @@ function bindCollapsedTab(): void {
     }
     const next = { ...loadLocalSettings(), collapsed: false };
     publishPanelSettings(next);
-    void openPanel(next);
+    queueOpenPanel(next);
   });
 }
 
