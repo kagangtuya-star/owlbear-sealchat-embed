@@ -1,5 +1,5 @@
 import OBR from "@owlbear-rodeo/sdk";
-import { buildEmbedUrl, buildLoginUrl, validateSealChatUrl } from "./settings/config";
+import { validateSealChatUrl } from "./settings/config";
 import { openPanel } from "./obr/popover";
 import { loadLocalSettings, saveLocalSettings } from "./settings/storage";
 import "./styles.css";
@@ -76,7 +76,6 @@ function renderLauncher(): void {
           <button id="open-panel" type="button">展开</button>
           <button id="collapse-panel" type="button">收缩</button>
           <button id="refresh-panel" type="button">刷新</button>
-          <button id="login-panel" type="button">登录</button>
           <button id="close-panel" type="button">关闭</button>
         </div>
         <button id="save-control" type="submit">保存设置</button>
@@ -181,19 +180,6 @@ function renderLauncher(): void {
 
   document.querySelector("#refresh-panel")?.addEventListener("click", () => {
     channel?.postMessage({ type: "sealchat.control.refresh" });
-  });
-
-  document.querySelector("#login-panel")?.addEventListener("click", () => {
-    const next = persist();
-    if (!next) {
-      return;
-    }
-    const embedUrl = buildEmbedUrl(next.sealChatUrl);
-    window.open(
-      buildLoginUrl(next.sealChatUrl, embedUrl),
-      "sealchat-login",
-      "noopener,noreferrer,width=960,height=720"
-    );
   });
 
   document.querySelector("#close-panel")?.addEventListener("click", async () => {

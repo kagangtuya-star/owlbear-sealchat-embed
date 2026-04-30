@@ -37,9 +37,8 @@ function openLoginIfNeeded(baseUrl: string): void {
   }
 
   loginWindowOpened = true;
-  const embedUrl = buildEmbedUrl(baseUrl);
   window.open(
-    buildLoginUrl(baseUrl, embedUrl),
+    buildLoginUrl(baseUrl),
     "sealchat-login",
     "noopener,noreferrer,width=960,height=720"
   );

@@ -69,10 +69,8 @@ export function buildEmbedUrl(baseUrl: string): string {
   return url.toString();
 }
 
-export function buildLoginUrl(baseUrl: string, returnTo: string): string {
-  const url = new URL("/login", normalizeSealChatUrl(baseUrl));
-  url.searchParams.set("redirect", new URL(returnTo).toString());
-  return url.toString();
+export function buildLoginUrl(baseUrl: string): string {
+  return normalizeSealChatUrl(baseUrl);
 }
 
 export function getUrlOrigin(input: string): string {
