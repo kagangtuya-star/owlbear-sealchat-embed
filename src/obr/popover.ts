@@ -1,3 +1,5 @@
+import { RESIZE_GUTTER } from "../panel/resize";
+
 export const PANEL_ID = "sealchat/sidebar";
 
 export type GeometryInput = {
@@ -21,14 +23,23 @@ export type PanelGeometry = {
 
 export function calculatePanelGeometry(input: GeometryInput): PanelGeometry {
   const rightOffset = Math.max(0, input.rightOffset);
-  const requestedWidth = input.collapsed ? input.collapsedWidth ?? 44 : input.width;
-  const requestedHeight = input.collapsed ? input.collapsedHeight ?? 96 : input.height;
+  const gutter = input.collapsed ? 0 : RESIZE_GUTTER;
+  const anchorRightOffset = Math.max(0, rightOffset - gutter);
+  const requestedWidth = input.collapsed
+    ? input.collapsedWidth ?? 44
+    : input.width + gutter * 2;
+  const requestedHeight = input.collapsed
+    ? input.collapsedHeight ?? 96
+    : input.height + gutter * 2;
   const minWidth = input.collapsed ? 36 : 280;
   const minHeight = input.collapsed ? 44 : 360;
   const preferredTop = input.collapsed
     ? input.viewportHeight - requestedHeight - 24
-    : input.top;
-  const width = Math.min(Math.max(minWidth, requestedWidth), Math.max(minWidth, input.viewportWidth - rightOffset));
+    : input.top - gutter;
+  const width = Math.min(
+    Math.max(minWidth, requestedWidth),
+    Math.max(minWidth, input.viewportWidth - anchorRightOffset)
+  );
   const height = Math.min(
     Math.max(minHeight, requestedHeight),
     Math.max(minHeight, input.viewportHeight - preferredTop - 16)
@@ -39,7 +50,7 @@ export function calculatePanelGeometry(input: GeometryInput): PanelGeometry {
     width,
     height,
     top,
-    left: input.viewportWidth - rightOffset,
+    left: input.viewportWidth - anchorRightOffset,
   };
 }
 

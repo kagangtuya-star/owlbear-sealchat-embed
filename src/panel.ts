@@ -1,5 +1,12 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { AuthStatus, parseSealChatMessage, shouldOpenLoginWindow } from "./auth/messages";
+import {
+  calculateResizePreviewOffset,
+  calculateResizeSettings,
+  RESIZE_GUTTER,
+  ResizeEdge,
+  ResizePreviewOffset,
+} from "./panel/resize";
 import { buildEmbedUrl, buildLoginUrl, getUrlOrigin, validateSealChatUrl } from "./settings/config";
 import { loadLocalSettings, saveLocalSettings } from "./settings/storage";
 import "./styles.css";
@@ -14,6 +21,7 @@ let card: HTMLElement | null = null;
 let frameWrap: HTMLElement | null = null;
 let emptyState: HTMLElement | null = null;
 const channel = "BroadcastChannel" in window ? new BroadcastChannel("sealchat-obr") : null;
+const RESIZE_EDGES: ResizeEdge[] = ["left", "right", "top", "bottom", "corner"];
 
 function openLoginIfNeeded(baseUrl: string): void {
   if (!shouldOpenLoginWindow(authStatus, loginWindowOpened)) {
@@ -65,9 +73,16 @@ function ensureShell(): void {
   bindResizeEdges();
 }
 
-function applySettings(settings: Settings): void {
+function isResizeEdge(value: string): value is ResizeEdge {
+  return RESIZE_EDGES.includes(value as ResizeEdge);
+}
+
+function applyPanelStyles(
+  settings: Settings,
+  previewOffset: ResizePreviewOffset = { right: 0 }
+): void {
   ensureShell();
-  if (!shell || !card || !frameWrap || !iframe || !emptyState) {
+  if (!shell || !card) {
     return;
   }
 
@@ -76,11 +91,24 @@ function applySettings(settings: Settings): void {
   card.classList.toggle("is-resizing", settings.resizeMode);
   card.style.setProperty("--panel-width", `${settings.width}px`);
   card.style.setProperty("--panel-height", `${settings.height}px`);
-  card.style.setProperty("--panel-top", "0px");
-  card.style.setProperty("--panel-right", "0px");
+  card.style.setProperty("--panel-top", `${settings.collapsed ? 0 : RESIZE_GUTTER}px`);
+  card.style.setProperty(
+    "--panel-right",
+    `${previewOffset.right + (settings.collapsed ? 0 : RESIZE_GUTTER)}px`
+  );
   card.style.setProperty("--collapsed-width", `${settings.collapsedWidth}px`);
   card.style.setProperty("--collapsed-height", `${settings.collapsedHeight}px`);
   card.style.setProperty("--sealchat-scale", `${settings.scale / 100}`);
+}
+
+function applySettings(settings: Settings): void {
+  applyPanelStyles(settings);
+  if (!card || !frameWrap || !iframe || !emptyState) {
+    return;
+  }
+
+  card.classList.remove("is-resize-dragging");
+  delete card.dataset.activeEdge;
 
   const validation = validateSealChatUrl(settings.sealChatUrl);
   if (!validation.ok) {
@@ -102,6 +130,16 @@ function publishPanelSettings(settings: Settings): void {
   saveLocalSettings(settings);
   channel?.postMessage({ type: "sealchat.panel.settings", settings });
   applySettings(settings);
+}
+
+function previewResize(start: Settings, preview: Settings, edge: ResizeEdge): void {
+  applyPanelStyles(preview, calculateResizePreviewOffset(start, preview, edge));
+  if (!card) {
+    return;
+  }
+
+  card.classList.add("is-resize-dragging");
+  card.dataset.activeEdge = edge;
 }
 
 function bindCollapsedTab(): void {
@@ -180,43 +218,39 @@ function bindResizeEdges(): void {
       event.stopPropagation();
 
       const edgeName = edge.dataset.edge ?? "";
+      if (!isResizeEdge(edgeName)) {
+        return;
+      }
+
       const startX = event.clientX;
       const startY = event.clientY;
       const start = loadLocalSettings();
+      let preview = start;
 
+      edge.classList.add("is-active");
       edge.setPointerCapture(event.pointerId);
 
       const move = (moveEvent: PointerEvent) => {
         const dx = moveEvent.clientX - startX;
         const dy = moveEvent.clientY - startY;
-        const next = { ...loadLocalSettings() };
 
-        if (edgeName === "left" || edgeName === "corner") {
-          next.width = Math.max(280, start.width - dx);
-        }
-        if (edgeName === "right") {
-          next.rightOffset = Math.max(48, start.rightOffset - dx);
-        }
-        if (edgeName === "top") {
-          next.top = Math.max(0, start.top + dy);
-          next.height = Math.max(360, start.height - dy);
-        }
-        if (edgeName === "bottom" || edgeName === "corner") {
-          next.height = Math.max(360, start.height + dy);
-        }
-
-        publishPanelSettings(next);
+        preview = calculateResizeSettings(start, edgeName, { dx, dy });
+        previewResize(start, preview, edgeName);
       };
 
       const finish = () => {
+        edge.classList.remove("is-active");
         edge.releasePointerCapture(event.pointerId);
         document.removeEventListener("pointermove", move);
         document.removeEventListener("pointerup", finish);
-        import("./obr/popover").then(({ openPanel }) => openPanel(loadLocalSettings()));
+        document.removeEventListener("pointercancel", finish);
+        publishPanelSettings(preview);
+        import("./obr/popover").then(({ openPanel }) => openPanel(preview));
       };
 
       document.addEventListener("pointermove", move);
       document.addEventListener("pointerup", finish);
+      document.addEventListener("pointercancel", finish);
     });
   });
 }
