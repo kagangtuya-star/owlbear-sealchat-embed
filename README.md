@@ -2,13 +2,13 @@
 title: SealChat
 description: Embed SealChat into Owlbear Rodeo as a floating chat panel
 author: SilverDragon
-image:
-icon: /icon.svg
+image: https://cdn.jsdelivr.net/gh/kagangtuya-star/owlbear-sealchat-embed@main/public/logo.png
+icon: https://raw.githubusercontent.com/kagangtuya-star/owlbear-sealchat-embed/refs/heads/main/public/icon.icon
 tags:
   - chat
   - sealchat
   - owlbear-rodeo
-manifest: /manifest.json
+manifest: https://cdn.jsdelivr.net/gh/kagangtuya-star/owlbear-sealchat-embed@main/public/manifest.json
 learn-more:
 ---
 
