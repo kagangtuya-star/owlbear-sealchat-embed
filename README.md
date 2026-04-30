@@ -14,7 +14,9 @@ learn-more:
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-# SealChat
+# owlbear-sealchat-embed
+
+<img width="1854" height="1092" alt="PixPin_2026-04-30_16-55-26" src="https://github.com/user-attachments/assets/77d807e4-33b6-4a0a-9176-ee055877ab34" />
 
 Embed SealChat into Owlbear Rodeo as a floating chat panel.
 
