@@ -1,0 +1,299 @@
+:root {
+  color-scheme: light;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  background: #1e2231;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #1e2231;
+}
+
+#panel {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #1e2231;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.launcher {
+  box-sizing: border-box;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  color: #e7ebf7;
+}
+
+.launcher button,
+.side-tab {
+  border: 0;
+  border-radius: 10px;
+  background: #1e6f5c;
+  color: white;
+  cursor: pointer;
+  padding: 8px 10px;
+}
+
+.launcher-control {
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: #292d3c;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(216, 222, 239, 0.26) transparent;
+}
+
+.launcher-control::-webkit-scrollbar {
+  width: 6px;
+}
+
+.launcher-control::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.launcher-control::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(216, 222, 239, 0.28);
+}
+
+.launcher-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.launcher-header span,
+.control-status {
+  color: #aeb7cc;
+  font-size: 12px;
+}
+
+.control-form {
+  display: grid;
+  gap: 10px;
+}
+
+.control-form label {
+  display: grid;
+  gap: 5px;
+  color: #d8deef;
+  font-size: 12px;
+}
+
+.control-form input {
+  min-width: 0;
+  border: 1px solid rgba(216, 222, 239, 0.18);
+  border-radius: 10px;
+  background: #1e2231;
+  color: #f3f6ff;
+  padding: 8px 9px;
+}
+
+.switch-row {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.switch-row input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
+.resize-controls {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #1e2231;
+}
+
+.resize-controls.is-open {
+  display: grid;
+}
+
+.control-status {
+  min-height: 16px;
+  margin: 0;
+}
+
+.control-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#save-control {
+  background: #111827;
+}
+
+.panel-shell {
+  box-sizing: border-box;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #1e2231;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.panel-card {
+  box-sizing: border-box;
+  position: absolute;
+  top: var(--panel-top, 48px);
+  right: var(--panel-right, 72px);
+  width: var(--panel-width, 420px);
+  height: var(--panel-height, 620px);
+  overflow: hidden;
+  background: #1e2231;
+  pointer-events: auto;
+}
+
+.panel-card.is-collapsed {
+  width: var(--collapsed-width, 44px);
+  height: var(--collapsed-height, 96px);
+  min-height: 44px;
+  background: transparent;
+}
+
+.frame-wrap {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: #1e2231;
+}
+
+.panel-card.is-collapsed .frame-wrap {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.frame-wrap iframe {
+  display: block;
+  width: calc(100% / var(--sealchat-scale, 1));
+  height: calc(100% / var(--sealchat-scale, 1));
+  border: 0;
+  background: #1e2231;
+  transform: scale(var(--sealchat-scale, 1));
+  transform-origin: top right;
+}
+
+.panel-empty {
+  box-sizing: border-box;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: #1e2231;
+  color: #d8deef;
+  text-align: center;
+}
+
+.floating-tab {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: #1e2231;
+  color: #fff;
+  cursor: grab;
+  letter-spacing: 0.16em;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+  touch-action: none;
+}
+
+.floating-tab span {
+  writing-mode: vertical-rl;
+}
+
+.floating-tab i {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid rgba(255, 255, 255, 0.78);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.78);
+  cursor: ns-resize;
+}
+
+.panel-card.is-collapsed .floating-tab {
+  display: grid;
+  place-items: center;
+}
+
+.resize-edge {
+  position: absolute;
+  z-index: 4;
+  display: none;
+  background: rgba(137, 221, 255, 0.45);
+  pointer-events: auto;
+}
+
+.panel-card.is-resizing:not(.is-collapsed) .resize-edge {
+  display: block;
+}
+
+.edge-left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.edge-right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.edge-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.edge-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.edge-corner {
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+}
+
+.side-tab {
+  width: 44px;
+  height: 144px;
+  border-radius: 14px 0 0 14px;
+  writing-mode: vertical-rl;
+  letter-spacing: 0.12em;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}

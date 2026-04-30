@@ -1,0 +1,20 @@
+{
+  "name": "sealchat-owlbear-sidebar",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc && vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@owlbear-rodeo/sdk": "latest"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-legacy": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}
