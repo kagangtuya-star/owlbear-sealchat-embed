@@ -1,20 +1,20 @@
 :root {
   color-scheme: light;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  background: #1e2231;
+  background: transparent;
 }
 
 body {
   margin: 0;
   overflow: hidden;
-  background: #1e2231;
+  background: transparent;
 }
 
 #panel {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #1e2231;
+  background: transparent;
 }
 
 button,
@@ -142,7 +142,7 @@ input {
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #1e2231;
+  background: transparent;
   box-shadow: none;
   pointer-events: none;
 }
@@ -157,12 +157,6 @@ input {
   overflow: visible;
   background: #1e2231;
   pointer-events: auto;
-}
-
-.panel-card.is-resize-dragging {
-  outline: 2px solid rgba(137, 221, 255, 0.92);
-  outline-offset: -2px;
-  box-shadow: inset 0 0 0 1px rgba(137, 221, 255, 0.28);
 }
 
 .panel-card.is-collapsed {
@@ -255,6 +249,26 @@ input {
 .resize-edge.is-active {
   background: rgba(137, 221, 255, 0.9);
   box-shadow: 0 0 0 1px rgba(7, 19, 32, 0.45), 0 0 16px rgba(137, 221, 255, 0.62);
+}
+
+.resize-preview {
+  box-sizing: border-box;
+  position: absolute;
+  z-index: 18;
+  top: var(--resize-preview-top, 6px);
+  right: var(--resize-preview-right, 6px);
+  display: none;
+  width: var(--resize-preview-width, 420px);
+  height: var(--resize-preview-height, 620px);
+  border: 2px solid rgba(137, 221, 255, 0.94);
+  border-radius: 2px;
+  background: rgba(137, 221, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(7, 19, 32, 0.45), 0 0 20px rgba(137, 221, 255, 0.54);
+  pointer-events: none;
+}
+
+.resize-preview.is-visible {
+  display: block;
 }
 
 .panel-card.is-resizing:not(.is-collapsed) .resize-edge {

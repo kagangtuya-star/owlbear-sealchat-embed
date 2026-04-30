@@ -1,11 +1,11 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { AuthStatus, parseSealChatMessage, shouldOpenLoginWindow } from "./auth/messages";
+import { openPanel } from "./obr/popover";
 import {
-  calculateResizePreviewOffset,
   calculateResizeSettings,
   RESIZE_GUTTER,
+  RESIZE_PREVIEW_RESERVE,
   ResizeEdge,
-  ResizePreviewOffset,
 } from "./panel/resize";
 import { buildEmbedUrl, buildLoginUrl, getUrlOrigin, validateSealChatUrl } from "./settings/config";
 import { loadLocalSettings, saveLocalSettings } from "./settings/storage";
@@ -20,6 +20,7 @@ let shell: HTMLElement | null = null;
 let card: HTMLElement | null = null;
 let frameWrap: HTMLElement | null = null;
 let emptyState: HTMLElement | null = null;
+let resizePreview: HTMLElement | null = null;
 const channel = "BroadcastChannel" in window ? new BroadcastChannel("sealchat-obr") : null;
 const RESIZE_EDGES: ResizeEdge[] = ["left", "right", "top", "bottom", "corner"];
 
@@ -60,6 +61,7 @@ function ensureShell(): void {
           <div id="panel-empty" class="panel-empty"></div>
         </div>
       </div>
+      <div id="resize-preview" class="resize-preview" aria-hidden="true"></div>
     </section>
   `;
 
@@ -68,6 +70,7 @@ function ensureShell(): void {
   frameWrap = document.querySelector<HTMLElement>("#frame-wrap");
   iframe = document.querySelector<HTMLIFrameElement>("#sealchat-frame");
   emptyState = document.querySelector<HTMLElement>("#panel-empty");
+  resizePreview = document.querySelector<HTMLElement>("#resize-preview");
 
   bindCollapsedTab();
   bindResizeEdges();
@@ -77,10 +80,20 @@ function isResizeEdge(value: string): value is ResizeEdge {
   return RESIZE_EDGES.includes(value as ResizeEdge);
 }
 
-function applyPanelStyles(
-  settings: Settings,
-  previewOffset: ResizePreviewOffset = { right: 0 }
-): void {
+function getPanelReserve(settings: Settings): { top: number; right: number } {
+  if (settings.collapsed) {
+    return { top: 0, right: 0 };
+  }
+
+  const reserve = settings.resizeMode ? RESIZE_PREVIEW_RESERVE : 0;
+  const totalReserve = RESIZE_GUTTER + reserve;
+  return {
+    top: Math.min(settings.top, totalReserve),
+    right: Math.min(settings.rightOffset, totalReserve),
+  };
+}
+
+function applyPanelStyles(settings: Settings): void {
   ensureShell();
   if (!shell || !card) {
     return;
@@ -89,13 +102,11 @@ function applyPanelStyles(
   shell.classList.toggle("is-resizing", settings.resizeMode);
   card.classList.toggle("is-collapsed", settings.collapsed);
   card.classList.toggle("is-resizing", settings.resizeMode);
+  const reserve = getPanelReserve(settings);
   card.style.setProperty("--panel-width", `${settings.width}px`);
   card.style.setProperty("--panel-height", `${settings.height}px`);
-  card.style.setProperty("--panel-top", `${settings.collapsed ? 0 : RESIZE_GUTTER}px`);
-  card.style.setProperty(
-    "--panel-right",
-    `${previewOffset.right + (settings.collapsed ? 0 : RESIZE_GUTTER)}px`
-  );
+  card.style.setProperty("--panel-top", `${reserve.top}px`);
+  card.style.setProperty("--panel-right", `${reserve.right}px`);
   card.style.setProperty("--collapsed-width", `${settings.collapsedWidth}px`);
   card.style.setProperty("--collapsed-height", `${settings.collapsedHeight}px`);
   card.style.setProperty("--sealchat-scale", `${settings.scale / 100}`);
@@ -109,6 +120,7 @@ function applySettings(settings: Settings): void {
 
   card.classList.remove("is-resize-dragging");
   delete card.dataset.activeEdge;
+  resizePreview?.classList.remove("is-visible");
 
   const validation = validateSealChatUrl(settings.sealChatUrl);
   if (!validation.ok) {
@@ -133,11 +145,22 @@ function publishPanelSettings(settings: Settings): void {
 }
 
 function previewResize(start: Settings, preview: Settings, edge: ResizeEdge): void {
-  applyPanelStyles(preview, calculateResizePreviewOffset(start, preview, edge));
-  if (!card) {
+  if (!card || !resizePreview) {
     return;
   }
 
+  const reserve = getPanelReserve(start);
+  const frame = {
+    width: preview.width,
+    height: preview.height,
+    top: reserve.top + preview.top - start.top,
+    right: reserve.right + preview.rightOffset - start.rightOffset,
+  };
+  resizePreview.style.setProperty("--resize-preview-width", `${frame.width}px`);
+  resizePreview.style.setProperty("--resize-preview-height", `${frame.height}px`);
+  resizePreview.style.setProperty("--resize-preview-top", `${frame.top}px`);
+  resizePreview.style.setProperty("--resize-preview-right", `${frame.right}px`);
+  resizePreview.classList.add("is-visible");
   card.classList.add("is-resize-dragging");
   card.dataset.activeEdge = edge;
 }
@@ -176,7 +199,7 @@ function bindCollapsedTab(): void {
     tab.releasePointerCapture(event.pointerId);
     document.removeEventListener("pointermove", move);
     document.removeEventListener("pointerup", finish);
-    import("./obr/popover").then(({ openPanel }) => openPanel(loadLocalSettings()));
+    void openPanel(loadLocalSettings());
   };
 
   tab.addEventListener("pointerdown", (event) => {
@@ -202,7 +225,7 @@ function bindCollapsedTab(): void {
     }
     const next = { ...loadLocalSettings(), collapsed: false };
     publishPanelSettings(next);
-    import("./obr/popover").then(({ openPanel }) => openPanel(next));
+    void openPanel(next);
   });
 }
 
@@ -240,12 +263,13 @@ function bindResizeEdges(): void {
 
       const finish = () => {
         edge.classList.remove("is-active");
+        resizePreview?.classList.remove("is-visible");
         edge.releasePointerCapture(event.pointerId);
         document.removeEventListener("pointermove", move);
         document.removeEventListener("pointerup", finish);
         document.removeEventListener("pointercancel", finish);
         publishPanelSettings(preview);
-        import("./obr/popover").then(({ openPanel }) => openPanel(preview));
+        void openPanel(preview);
       };
 
       document.addEventListener("pointermove", move);

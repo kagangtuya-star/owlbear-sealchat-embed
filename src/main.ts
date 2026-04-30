@@ -146,10 +146,11 @@ function renderLauncher(): void {
     }
   });
 
-  document.querySelector("#resize-mode")?.addEventListener("change", () => {
+  document.querySelector("#resize-mode")?.addEventListener("change", async () => {
     const next = { ...readSettings(), collapsed: settings.collapsed };
     saveLocalSettings(next);
     channel?.postMessage({ type: "sealchat.control.settings", settings: next });
+    await openPanel(next);
     renderLauncher();
   });
 
