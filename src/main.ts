@@ -1,5 +1,5 @@
 import OBR from "@owlbear-rodeo/sdk";
-import { validateSealChatUrl } from "./settings/config";
+import { sanitizeSettingsNumbers, validateSealChatUrl } from "./settings/config";
 import { openPanel } from "./obr/popover";
 import { loadLocalSettings, saveLocalSettings } from "./settings/storage";
 import "./styles.css";
@@ -57,25 +57,25 @@ function renderLauncher(): void {
           调整大小与位置
         </label>
         <section class="resize-controls ${settings.resizeMode ? "is-open" : ""}">
-          <label>宽度 <input id="panel-width" type="number" min="280" step="10" value="${
+          <label>宽度 <input id="panel-width" type="number" min="280" step="1" value="${
             settings.width
           }" /></label>
-          <label>高度 <input id="panel-height" type="number" min="360" step="10" value="${
+          <label>高度 <input id="panel-height" type="number" min="360" step="1" value="${
             settings.height
           }" /></label>
-          <label>顶部 <input id="panel-top" type="number" min="0" step="10" value="${
+          <label>顶部 <input id="panel-top" type="number" min="0" step="1" value="${
             settings.top
           }" /></label>
-          <label>避开右侧工具栏 <input id="panel-right" type="number" min="0" step="4" value="${
+          <label>避开右侧工具栏 <input id="panel-right" type="number" min="0" step="1" value="${
             settings.rightOffset
           }" /></label>
-          <label>收缩宽度 <input id="collapsed-width" type="number" min="36" step="2" value="${
+          <label>收缩宽度 <input id="collapsed-width" type="number" min="36" step="1" value="${
             settings.collapsedWidth
           }" /></label>
-          <label>收缩高度 <input id="collapsed-height" type="number" min="44" step="4" value="${
+          <label>收缩高度 <input id="collapsed-height" type="number" min="44" step="1" value="${
             settings.collapsedHeight
           }" /></label>
-          <label>缩放倍率 <input id="panel-scale" type="number" min="60" max="160" step="5" value="${
+          <label>缩放倍率 <input id="panel-scale" type="number" min="60" max="160" step="1" value="${
             settings.scale
           }" /></label>
         </section>
@@ -93,7 +93,7 @@ function renderLauncher(): void {
 
   const readSettings = () => {
     const current = loadLocalSettings();
-    return {
+    return sanitizeSettingsNumbers({
       ...current,
       sealChatUrl: document.querySelector<HTMLInputElement>("#sealchat-url")?.value ?? "",
       resizeMode: document.querySelector<HTMLInputElement>("#resize-mode")?.checked ?? false,
@@ -113,7 +113,7 @@ function renderLauncher(): void {
         current.collapsedHeight
       ),
       scale: toNumber(document.querySelector<HTMLInputElement>("#panel-scale"), current.scale),
-    };
+    });
   };
 
   const persist = (collapsed = readSettings().collapsed, silent = false) => {

@@ -38,6 +38,25 @@ export const DEFAULT_SETTINGS: SealChatSettings = {
   collapsed: false,
 };
 
+function nearestInteger(value: number): number {
+  return Number.isFinite(value) ? Math.round(value) : value;
+}
+
+export function sanitizeSettingsNumbers(settings: SealChatSettings): SealChatSettings {
+  return {
+    ...settings,
+    width: nearestInteger(settings.width),
+    height: nearestInteger(settings.height),
+    top: nearestInteger(settings.top),
+    rightOffset: nearestInteger(settings.rightOffset),
+    collapsedTop: nearestInteger(settings.collapsedTop),
+    collapsedRightOffset: nearestInteger(settings.collapsedRightOffset),
+    collapsedWidth: nearestInteger(settings.collapsedWidth),
+    collapsedHeight: nearestInteger(settings.collapsedHeight),
+    scale: nearestInteger(settings.scale),
+  };
+}
+
 export function normalizeSealChatUrl(input: string): string {
   return input.trim().replace(/\/+$/, "");
 }

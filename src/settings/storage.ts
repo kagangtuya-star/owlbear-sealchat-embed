@@ -1,4 +1,9 @@
-import { DEFAULT_COLLAPSED_HEIGHT, DEFAULT_SETTINGS, SealChatSettings } from "./config";
+import {
+  DEFAULT_COLLAPSED_HEIGHT,
+  DEFAULT_SETTINGS,
+  SealChatSettings,
+  sanitizeSettingsNumbers,
+} from "./config";
 
 const LOCAL_KEY = "sealchat.owlbear.settings.v1";
 const ROOM_URL_KEY = "sealchat.owlbear/defaultUrl";
@@ -12,7 +17,7 @@ export function mergeSettings(value: unknown): SealChatSettings {
     return DEFAULT_SETTINGS;
   }
 
-  return {
+  return sanitizeSettingsNumbers({
     ...DEFAULT_SETTINGS,
     sealChatUrl:
       typeof value.sealChatUrl === "string"
@@ -50,7 +55,7 @@ export function mergeSettings(value: unknown): SealChatSettings {
         : DEFAULT_SETTINGS.useRoomDefault,
     collapsed:
       typeof value.collapsed === "boolean" ? value.collapsed : DEFAULT_SETTINGS.collapsed,
-  };
+  });
 }
 
 export function loadLocalSettings(): SealChatSettings {
@@ -67,7 +72,7 @@ export function loadLocalSettings(): SealChatSettings {
 }
 
 export function saveLocalSettings(settings: SealChatSettings): void {
-  window.localStorage.setItem(LOCAL_KEY, JSON.stringify(settings));
+  window.localStorage.setItem(LOCAL_KEY, JSON.stringify(sanitizeSettingsNumbers(settings)));
 }
 
 export async function loadRoomDefaultUrl(): Promise<string> {

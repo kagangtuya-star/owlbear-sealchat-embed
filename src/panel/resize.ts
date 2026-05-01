@@ -1,4 +1,4 @@
-import { SealChatSettings } from "../settings/config";
+import { SealChatSettings, sanitizeSettingsNumbers } from "../settings/config";
 
 export type ResizeEdge = "left" | "right" | "top" | "bottom" | "corner";
 
@@ -45,7 +45,7 @@ export function calculateResizeSettings(
     next.height = Math.max(MIN_HEIGHT, start.height + delta.dy);
   }
 
-  return next;
+  return sanitizeSettingsNumbers(next);
 }
 
 export function calculateResizePreviewContainer(

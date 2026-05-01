@@ -1,4 +1,4 @@
-import { SealChatSettings } from "../settings/config";
+import { SealChatSettings, sanitizeSettingsNumbers } from "../settings/config";
 
 export type CollapsedPosition = {
   top: number;
@@ -45,9 +45,9 @@ export function calculateCollapsedDragSettings(
   startPosition: CollapsedPosition,
   delta: CollapsedDragDelta
 ): SealChatSettings {
-  return {
+  return sanitizeSettingsNumbers({
     ...start,
     collapsedTop: Math.max(0, startPosition.top + delta.dy),
     collapsedRightOffset: Math.max(0, startPosition.rightOffset - delta.dx),
-  };
+  });
 }
