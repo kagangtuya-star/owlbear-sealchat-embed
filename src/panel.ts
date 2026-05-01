@@ -57,6 +57,9 @@ function ensureShell(): void {
           <span>聊天</span>
           <i id="tab-resize" aria-hidden="true"></i>
         </button>
+        <button id="panel-minimize" class="panel-minimize" type="button" title="收缩 SealChat" aria-label="收缩 SealChat">
+          <span aria-hidden="true"></span>
+        </button>
         <div class="resize-edge edge-left" data-edge="left"></div>
         <div class="resize-edge edge-right" data-edge="right"></div>
         <div class="resize-edge edge-top" data-edge="top"></div>
@@ -173,7 +176,8 @@ function previewResize(start: Settings, preview: Settings, edge: ResizeEdge): vo
 
 function bindCollapsedTab(): void {
   const tab = document.querySelector<HTMLButtonElement>("#collapsed-tab");
-  if (!tab) {
+  const minimize = document.querySelector<HTMLButtonElement>("#panel-minimize");
+  if (!tab || !minimize) {
     return;
   }
 
@@ -206,6 +210,14 @@ function bindCollapsedTab(): void {
     pendingOpenSettings = settings;
     flushOpenPanel();
   };
+
+  minimize.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const next = { ...loadLocalSettings(), collapsed: true };
+    publishPanelSettings(next);
+    queueOpenPanel(next);
+  });
 
   const move = (event: PointerEvent) => {
     if (!dragging) {
