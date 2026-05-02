@@ -7,7 +7,7 @@
   "manifest_version": 1,
   "action": {
     "title": "SealChat",
-    "icon": "https://owlbear-sealchat-embed.kagangtuya.top/icon.ico",
+    "icon": "https://owlbear-sealchat-embed.kagangtuya.top/logo.png",
     "popover": "/",
     "height": 520,
     "width": 340
