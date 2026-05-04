@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 .ace-tool/
 .codex
 /src/test
+/docs
+/owlbear-theatre
