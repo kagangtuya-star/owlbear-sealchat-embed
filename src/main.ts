@@ -1,4 +1,8 @@
-import OBR from "@owlbear-rodeo/sdk";
+﻿import OBR from "@owlbear-rodeo/sdk";
+import {
+  closeDialoguePopover,
+  openDialoguePanel,
+} from "./dialogue/popover";
 import { sanitizeSettingsNumbers, validateSealChatUrl } from "./settings/config";
 import { openPanel } from "./obr/popover";
 import { loadLocalSettings, saveLocalSettings } from "./settings/storage";
@@ -18,6 +22,15 @@ function escapeAttribute(value: string): string {
 function toNumber(input: HTMLInputElement | null, fallback: number): number {
   const value = Number(input?.value);
   return Number.isFinite(value) ? value : fallback;
+}
+
+async function syncDialoguePopover(settings: ReturnType<typeof loadLocalSettings>): Promise<void> {
+  if (!settings.dialogueEnabled) {
+    await closeDialoguePopover();
+    return;
+  }
+
+  await openDialoguePanel(settings);
 }
 
 function syncLauncherHeight(): void {
@@ -56,6 +69,18 @@ function renderLauncher(): void {
           <input id="resize-mode" type="checkbox" ${settings.resizeMode ? "checked" : ""} />
           调整大小与位置
         </label>
+        <label class="switch-row">
+          <input id="dialogue-enabled" type="checkbox" ${
+            settings.dialogueEnabled ? "checked" : ""
+          } />
+          启用对话框
+        </label>
+        <label class="switch-row">
+          <input id="dialogue-config-mode" type="checkbox" ${
+            settings.dialogueConfigMode ? "checked" : ""
+          } />
+          调整对话框配置
+        </label>
         <section class="resize-controls ${settings.resizeMode ? "is-open" : ""}">
           <label>宽度 <input id="panel-width" type="number" min="280" step="1" value="${
             settings.width
@@ -77,6 +102,35 @@ function renderLauncher(): void {
           }" /></label>
           <label>缩放倍率 <input id="panel-scale" type="number" min="60" max="160" step="1" value="${
             settings.scale
+          }" /></label>
+        </section>
+        <section class="resize-controls ${settings.dialogueConfigMode ? "is-open" : ""} dialogue-controls">
+          <label>打字间隔(ms/字) <input id="dialogue-type-speed" type="number" min="1" step="1" value="${
+            settings.dialogueTypeSpeed
+          }" /></label>
+          <label>文字大小 <input id="dialogue-font-size" type="number" min="14" step="1" value="${
+            settings.dialogueFontSize
+          }" /></label>
+          <label>等待时间(秒) <input id="dialogue-wait-ms" type="number" min="0" step="1" value="${
+            Math.round(settings.dialogueWaitMs / 1000)
+          }" /></label>
+          <label>对话宽度 <input id="dialogue-width" type="number" step="1" value="${
+            settings.dialogueWidth
+          }" /></label>
+          <label>对话高度 <input id="dialogue-height" type="number" step="1" value="${
+            settings.dialogueHeight
+          }" /></label>
+          <label>对话顶部 <input id="dialogue-top" type="number" min="0" step="1" value="${
+            settings.dialogueTop
+          }" /></label>
+          <label>对话左偏移 <input id="dialogue-left" type="number" min="0" step="1" value="${
+            settings.dialogueLeftOffset
+          }" /></label>
+          <label>最小化宽度 <input id="dialogue-collapsed-width" type="number" min="48" step="1" value="${
+            settings.dialogueCollapsedWidth
+          }" /></label>
+          <label>最小化高度 <input id="dialogue-collapsed-height" type="number" min="48" step="1" value="${
+            settings.dialogueCollapsedHeight
           }" /></label>
         </section>
         <div class="control-actions">
@@ -113,6 +167,48 @@ function renderLauncher(): void {
         current.collapsedHeight
       ),
       scale: toNumber(document.querySelector<HTMLInputElement>("#panel-scale"), current.scale),
+      dialogueEnabled:
+        document.querySelector<HTMLInputElement>("#dialogue-enabled")?.checked ??
+        current.dialogueEnabled,
+      dialogueConfigMode:
+        document.querySelector<HTMLInputElement>("#dialogue-config-mode")?.checked ??
+        current.dialogueConfigMode,
+      dialogueTypeSpeed: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-type-speed"),
+        current.dialogueTypeSpeed
+      ),
+      dialogueFontSize: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-font-size"),
+        current.dialogueFontSize
+      ),
+      dialogueWaitMs: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-wait-ms"),
+        current.dialogueWaitMs / 1000
+      ) * 1000,
+      dialogueWidth: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-width"),
+        current.dialogueWidth
+      ),
+      dialogueHeight: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-height"),
+        current.dialogueHeight
+      ),
+      dialogueTop: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-top"),
+        current.dialogueTop
+      ),
+      dialogueLeftOffset: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-left"),
+        current.dialogueLeftOffset
+      ),
+      dialogueCollapsedWidth: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-collapsed-width"),
+        current.dialogueCollapsedWidth
+      ),
+      dialogueCollapsedHeight: toNumber(
+        document.querySelector<HTMLInputElement>("#dialogue-collapsed-height"),
+        current.dialogueCollapsedHeight
+      ),
     });
   };
 
@@ -149,6 +245,7 @@ function renderLauncher(): void {
     const next = persist();
     if (next) {
       await openPanel(next);
+      await syncDialoguePopover(next);
       renderLauncher();
     }
   });
@@ -158,12 +255,27 @@ function renderLauncher(): void {
     saveLocalSettings(next);
     channel?.postMessage({ type: "sealchat.control.settings", settings: next });
     await openPanel(next);
+    await syncDialoguePopover(next);
+    renderLauncher();
+  });
+
+  document.querySelector("#dialogue-enabled")?.addEventListener("change", async () => {
+    const next = readSettings();
+    saveLocalSettings(next);
+    channel?.postMessage({ type: "sealchat.control.settings", settings: next });
+    await syncDialoguePopover(next);
+    renderLauncher();
+  });
+
+  document.querySelector("#dialogue-config-mode")?.addEventListener("change", () => {
+    const next = readSettings();
+    saveLocalSettings(next);
     renderLauncher();
   });
 
   document.querySelectorAll<HTMLInputElement>(".control-form input").forEach((input) => {
     input.addEventListener("input", () => {
-      if (input.id === "resize-mode") {
+      if (input.id === "resize-mode" || input.id === "dialogue-config-mode") {
         return;
       }
       preview();
@@ -176,6 +288,7 @@ function renderLauncher(): void {
       return;
     }
     await openPanel(next);
+    await syncDialoguePopover(next);
   });
 
   document.querySelector("#collapse-panel")?.addEventListener("click", async () => {
@@ -184,6 +297,7 @@ function renderLauncher(): void {
       return;
     }
     await openPanel(next);
+    await syncDialoguePopover(next);
   });
 
   document.querySelector("#refresh-panel")?.addEventListener("click", () => {
@@ -197,7 +311,10 @@ function renderLauncher(): void {
 }
 
 channel?.addEventListener("message", (event) => {
-  if (event.data?.type !== "sealchat.panel.settings") {
+  if (
+    event.data?.type !== "sealchat.panel.settings" &&
+    event.data?.type !== "sealchat.dialogue.settings"
+  ) {
     return;
   }
   const settings = event.data.settings;
@@ -212,4 +329,9 @@ OBR.onReady(async () => {
   await OBR.action.setTitle("SealChat");
   await OBR.action.setIcon("/icon.ico");
   renderLauncher();
+  const settings = loadLocalSettings();
+  if (settings.dialogueEnabled) {
+    await syncDialoguePopover(settings);
+  }
 });
+

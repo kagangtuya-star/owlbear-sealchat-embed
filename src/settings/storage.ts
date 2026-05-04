@@ -1,5 +1,6 @@
-import {
+﻿import {
   DEFAULT_COLLAPSED_HEIGHT,
+  DEFAULT_DIALOGUE_COLLAPSED_HEIGHT,
   DEFAULT_SETTINGS,
   SealChatSettings,
   sanitizeSettingsNumbers,
@@ -55,6 +56,67 @@ export function mergeSettings(value: unknown): SealChatSettings {
         : DEFAULT_SETTINGS.useRoomDefault,
     collapsed:
       typeof value.collapsed === "boolean" ? value.collapsed : DEFAULT_SETTINGS.collapsed,
+    dialogueEnabled:
+      typeof value.dialogueEnabled === "boolean"
+        ? value.dialogueEnabled
+        : DEFAULT_SETTINGS.dialogueEnabled,
+    dialogueConfigMode:
+      typeof value.dialogueConfigMode === "boolean"
+        ? value.dialogueConfigMode
+        : DEFAULT_SETTINGS.dialogueConfigMode,
+    dialogueTypeSpeed:
+      typeof value.dialogueTypeSpeed === "number"
+        ? value.dialogueTypeSpeed === 10
+          ? DEFAULT_SETTINGS.dialogueTypeSpeed
+          : value.dialogueTypeSpeed
+        : DEFAULT_SETTINGS.dialogueTypeSpeed,
+    dialogueFontSize:
+      typeof value.dialogueFontSize === "number"
+        ? value.dialogueFontSize === 24
+          ? DEFAULT_SETTINGS.dialogueFontSize
+          : value.dialogueFontSize
+        : DEFAULT_SETTINGS.dialogueFontSize,
+    dialogueWaitMs:
+      typeof value.dialogueWaitMs === "number"
+        ? value.dialogueWaitMs === 1000
+          ? DEFAULT_SETTINGS.dialogueWaitMs
+          : value.dialogueWaitMs
+        : DEFAULT_SETTINGS.dialogueWaitMs,
+    dialogueWidth:
+      typeof value.dialogueWidth === "number"
+        ? value.dialogueWidth
+        : DEFAULT_SETTINGS.dialogueWidth,
+    dialogueHeight:
+      typeof value.dialogueHeight === "number"
+        ? value.dialogueHeight
+        : DEFAULT_SETTINGS.dialogueHeight,
+    dialogueTop:
+      typeof value.dialogueTop === "number" ? value.dialogueTop : DEFAULT_SETTINGS.dialogueTop,
+    dialogueLeftOffset:
+      typeof value.dialogueLeftOffset === "number"
+        ? value.dialogueLeftOffset
+        : DEFAULT_SETTINGS.dialogueLeftOffset,
+    dialogueCollapsed:
+      typeof value.dialogueCollapsed === "boolean"
+        ? value.dialogueCollapsed
+        : DEFAULT_SETTINGS.dialogueCollapsed,
+    dialogueCollapsedTop:
+      typeof value.dialogueCollapsedTop === "number"
+        ? value.dialogueCollapsedTop
+        : DEFAULT_SETTINGS.dialogueCollapsedTop,
+    dialogueCollapsedLeftOffset:
+      typeof value.dialogueCollapsedLeftOffset === "number"
+        ? value.dialogueCollapsedLeftOffset
+        : DEFAULT_SETTINGS.dialogueCollapsedLeftOffset,
+    dialogueCollapsedWidth:
+      typeof value.dialogueCollapsedWidth === "number"
+        ? value.dialogueCollapsedWidth
+        : DEFAULT_SETTINGS.dialogueCollapsedWidth,
+    dialogueCollapsedHeight:
+      typeof value.dialogueCollapsedHeight === "number" &&
+      value.dialogueCollapsedHeight !== 96
+        ? value.dialogueCollapsedHeight
+        : DEFAULT_DIALOGUE_COLLAPSED_HEIGHT,
   });
 }
 
@@ -86,3 +148,4 @@ export async function saveRoomDefaultUrl(url: string): Promise<void> {
   const { default: OBR } = await import("@owlbear-rodeo/sdk");
   await OBR.room.setMetadata({ [ROOM_URL_KEY]: url });
 }
+

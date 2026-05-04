@@ -1,5 +1,14 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { AuthStatus, parseSealChatMessage, shouldOpenLoginWindow } from "./auth/messages";
+import {
+  createHandshakeMessage,
+  createUnsubscribeMessage,
+  isHandshakeAckWithChannel,
+  normalizeBridgeMessageEvent,
+  readRolesSnapshot,
+} from "./dialogue/bridge";
+import { closeDialoguePopover, openDialoguePanel } from "./dialogue/popover";
+import type { SealChatRoleSnapshot } from "./dialogue/types";
 import { openPanel } from "./obr/popover";
 import {
   calculateResizeSettings,
@@ -14,7 +23,12 @@ import {
   resolveCollapsedStartPosition,
 } from "./panel/collapsedDrag";
 import type { CollapsedPosition, ScreenPointerPosition } from "./panel/collapsedDrag";
-import { buildEmbedUrl, buildLoginUrl, getUrlOrigin, validateSealChatUrl } from "./settings/config";
+import {
+  buildLoginUrl,
+  buildSealChatRootUrl,
+  getUrlOrigin,
+  validateSealChatUrl,
+} from "./settings/config";
 import { loadLocalSettings, saveLocalSettings } from "./settings/storage";
 import "./styles.css";
 
@@ -28,6 +42,9 @@ let card: HTMLElement | null = null;
 let frameWrap: HTMLElement | null = null;
 let emptyState: HTMLElement | null = null;
 let resizePreview: HTMLElement | null = null;
+let bridgeHandshakeTimer: number | undefined;
+let bridgeReadyChannelId = "";
+let bridgeRolesById = new Map<string, SealChatRoleSnapshot>();
 const channel = "BroadcastChannel" in window ? new BroadcastChannel("sealchat-obr") : null;
 const RESIZE_EDGES: ResizeEdge[] = ["left", "right", "top", "bottom", "corner"];
 
@@ -42,6 +59,54 @@ function openLoginIfNeeded(baseUrl: string): void {
     "sealchat-login",
     "noopener,noreferrer,width=960,height=720"
   );
+}
+
+function clearBridgeState(): void {
+  bridgeReadyChannelId = "";
+  bridgeRolesById = new Map<string, SealChatRoleSnapshot>();
+  window.clearInterval(bridgeHandshakeTimer);
+}
+
+function sendBridgeUnsubscribe(): void {
+  if (!iframe?.contentWindow) {
+    return;
+  }
+
+  iframe.contentWindow.postMessage(createUnsubscribeMessage(), "*");
+}
+
+function sendBridgeHandshake(): void {
+  if (!iframe?.contentWindow || !loadLocalSettings().dialogueEnabled) {
+    return;
+  }
+
+  iframe.contentWindow.postMessage(createHandshakeMessage(), "*");
+}
+
+function startBridgeHandshakePolling(): void {
+  clearBridgeState();
+  sendBridgeHandshake();
+  bridgeHandshakeTimer = window.setInterval(() => {
+    if (bridgeReadyChannelId) {
+      window.clearInterval(bridgeHandshakeTimer);
+      return;
+    }
+    sendBridgeHandshake();
+  }, 1500);
+}
+
+function shouldReplaceFrameSource(currentSrc: string, nextRootUrl: string): boolean {
+  if (!currentSrc) {
+    return true;
+  }
+
+  try {
+    const currentUrl = new URL(currentSrc);
+    const nextUrl = new URL(nextRootUrl);
+    return currentUrl.origin !== nextUrl.origin || currentUrl.pathname !== nextUrl.pathname;
+  } catch {
+    return true;
+  }
 }
 
 function ensureShell(): void {
@@ -83,6 +148,17 @@ function ensureShell(): void {
 
   bindCollapsedTab();
   bindResizeEdges();
+  iframe?.addEventListener("load", () => {
+    if (!loadLocalSettings().dialogueEnabled) {
+      clearBridgeState();
+      return;
+    }
+    startBridgeHandshakePolling();
+  });
+  window.addEventListener("beforeunload", () => {
+    clearBridgeState();
+    sendBridgeUnsubscribe();
+  });
 }
 
 function isResizeEdge(value: string): value is ResizeEdge {
@@ -133,18 +209,32 @@ function applySettings(settings: Settings): void {
 
   const validation = validateSealChatUrl(settings.sealChatUrl);
   if (!validation.ok) {
+    clearBridgeState();
     iframe.hidden = true;
     emptyState.hidden = false;
     emptyState.textContent = validation.reason;
     return;
   }
 
-  const frameUrl = buildEmbedUrl(validation.url);
+  const frameUrl = buildSealChatRootUrl(validation.url);
   emptyState.hidden = true;
   iframe.hidden = false;
-  if (iframe.src !== frameUrl) {
+  if (shouldReplaceFrameSource(iframe.src, frameUrl)) {
+    clearBridgeState();
+    sendBridgeUnsubscribe();
     iframe.src = frameUrl;
+  } else if (settings.dialogueEnabled && !bridgeReadyChannelId) {
+    startBridgeHandshakePolling();
   }
+}
+
+function syncDialoguePopover(settings: Settings): void {
+  if (!settings.dialogueEnabled) {
+    void closeDialoguePopover();
+    return;
+  }
+
+  void openDialoguePanel(settings);
 }
 
 function publishPanelSettings(settings: Settings): void {
@@ -355,6 +445,34 @@ window.addEventListener("message", async (event) => {
     return;
   }
 
+  if (settings.dialogueEnabled) {
+    if (isHandshakeAckWithChannel(event.data)) {
+      bridgeReadyChannelId = event.data.channelId;
+      window.clearInterval(bridgeHandshakeTimer);
+      channel?.postMessage({ type: "sealchat.dialogue.bridge-ready", ack: event.data });
+      return;
+    }
+
+    const roles = readRolesSnapshot(event.data);
+    if (roles) {
+      bridgeRolesById = new Map(roles.map((entry) => [entry.identityId, entry]));
+      channel?.postMessage({ type: "sealchat.dialogue.roles", roles });
+      return;
+    }
+
+    const queueEvent = normalizeBridgeMessageEvent(event.data, bridgeRolesById);
+    if (queueEvent) {
+      if (queueEvent.type === "enqueue") {
+        channel?.postMessage({ type: "sealchat.dialogue.enqueue", item: queueEvent.item });
+      } else if (queueEvent.type === "update") {
+        channel?.postMessage({ type: "sealchat.dialogue.update", item: queueEvent.item });
+      } else if (queueEvent.type === "delete") {
+        channel?.postMessage({ type: "sealchat.dialogue.delete", messageId: queueEvent.messageId });
+      }
+      return;
+    }
+  }
+
   const message = parseSealChatMessage(event.data);
   if (!message) {
     return;
@@ -372,12 +490,27 @@ window.addEventListener("message", async (event) => {
 
 channel?.addEventListener("message", (event) => {
   if (event.data?.type === "sealchat.control.refresh" && iframe) {
+    clearBridgeState();
+    sendBridgeUnsubscribe();
     iframe.src = iframe.src;
   }
   if (event.data?.type === "sealchat.control.settings" && event.data.settings) {
     saveLocalSettings(event.data.settings);
     applySettings(event.data.settings);
+    syncDialoguePopover(event.data.settings);
+    if (!event.data.settings.dialogueEnabled) {
+      clearBridgeState();
+      sendBridgeUnsubscribe();
+    }
+  }
+  if (event.data?.type === "sealchat.dialogue.settings" && event.data.settings) {
+    saveLocalSettings(event.data.settings);
+    syncDialoguePopover(event.data.settings);
   }
 });
 
-OBR.onReady(() => applySettings(loadLocalSettings()));
+OBR.onReady(() => {
+  const settings = loadLocalSettings();
+  applySettings(settings);
+  syncDialoguePopover(settings);
+});

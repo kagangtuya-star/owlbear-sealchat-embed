@@ -34,6 +34,17 @@ describe("integer settings numbers", () => {
         collapsedWidth: 44.5,
         collapsedHeight: 55.5,
         scale: 99.5,
+        dialogueTypeSpeed: 19.6,
+        dialogueFontSize: 24.5,
+        dialogueWaitMs: 1000.6,
+        dialogueWidth: 639.6,
+        dialogueHeight: 279.6,
+        dialogueTop: 55.6,
+        dialogueLeftOffset: 88.6,
+        dialogueCollapsedTop: 13.5,
+        dialogueCollapsedLeftOffset: 90.5,
+        dialogueCollapsedWidth: 52.5,
+        dialogueCollapsedHeight: 55.6,
       })
     ).toMatchObject({
       width: 420,
@@ -45,6 +56,17 @@ describe("integer settings numbers", () => {
       collapsedWidth: 45,
       collapsedHeight: 56,
       scale: 100,
+      dialogueTypeSpeed: 20,
+      dialogueFontSize: 25,
+      dialogueWaitMs: 1001,
+      dialogueWidth: 640,
+      dialogueHeight: 280,
+      dialogueTop: 56,
+      dialogueLeftOffset: 89,
+      dialogueCollapsedTop: 14,
+      dialogueCollapsedLeftOffset: 91,
+      dialogueCollapsedWidth: 53,
+      dialogueCollapsedHeight: 56,
     });
   });
 

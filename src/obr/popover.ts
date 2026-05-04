@@ -1,5 +1,6 @@
 import { RESIZE_GUTTER, RESIZE_PREVIEW_RESERVE } from "../panel/resize";
 import { DEFAULT_COLLAPSED_HEIGHT } from "../settings/config";
+import { closeDialoguePopover } from "../dialogue/popover";
 
 export const PANEL_ID = "sealchat/sidebar";
 
@@ -120,4 +121,5 @@ export async function openPanel(settings: PanelOpenSettings): Promise<void> {
 export async function closeAllPopovers(): Promise<void> {
   const { default: OBR } = await import("@owlbear-rodeo/sdk");
   await OBR.popover.close(PANEL_ID);
+  await closeDialoguePopover();
 }
