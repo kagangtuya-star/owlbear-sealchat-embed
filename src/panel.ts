@@ -131,7 +131,7 @@ function ensureShell(): void {
         <div class="resize-edge edge-bottom" data-edge="bottom"></div>
         <div class="resize-edge edge-corner" data-edge="corner"></div>
         <div id="frame-wrap" class="frame-wrap">
-          <iframe id="sealchat-frame" title="SealChat"></iframe>
+          <iframe id="sealchat-frame" title="SealChat" allow="autoplay"></iframe>
           <div id="panel-empty" class="panel-empty"></div>
         </div>
       </div>
